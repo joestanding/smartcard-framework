@@ -1,0 +1,54 @@
+#!/usr/bin/env python3
+
+# Core Python
+import sys
+# Third-party Modules
+from colorama import Fore, Back, Style
+# Project Modules
+from scframework.apdu import Request, Response
+from scframework.constants import SmartCardConstants
+from scframework.card import Card
+from scframework.utilities import StringUtils
+
+# --------------------------------------------------------------------------- #
+
+def coloured(message, colour):
+    return colour + message + Style.RESET_ALL
+
+# --------------------------------------------------------------------------- #
+
+def main():
+    card = Card()
+    card.connect()
+    while True:
+        apdu = input(coloured("\nAPDU> ", Fore.BLUE))
+        request = Request.from_str(apdu)
+        data, sw1, sw2 = card.send_apdu(apdu.strip())
+        if sw1 is None:
+            print(coloured("Failed to transmit APDU to the card! The provided " + \
+                           "APDU did not appear to be in a valid hex format.",
+                           Fore.RED))
+            continue
+        if data == '-':
+            data = ''
+        if request is not None:
+            request.pretty_print()
+        else:
+            print(coloured("Could not parse the APDU you sent to the card. Is it in a valid format?", Fore.RED))
+        response = Response(apdu_str=data + StringUtils.byte_to_hex(sw1) + StringUtils.byte_to_hex(sw2))
+        response.pretty_print()
+
+        # Auto GET RESPONSE when needed
+        if sw1 == 0x61:
+            print(coloured("Card indicated request succeeded but GET RESPONSE required - auto-sending..", Fore.CYAN))
+            data, sw1, sw2 = card.send_apdu("00c00000" + StringUtils.byte_to_hex(sw2))
+            response = Response(apdu_str=data + StringUtils.byte_to_hex(sw1) + StringUtils.byte_to_hex(sw2))
+            response.pretty_print()
+            print()
+
+    print("")
+
+# --------------------------------------------------------------------------- #
+
+if __name__ == '__main__':
+    main()

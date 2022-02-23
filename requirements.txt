@@ -1,0 +1,3 @@
+colorama==0.3.7
+tabulate==0.8.2
+pyscard==1.9.8

@@ -1,0 +1,47 @@
+#!/usr/bin/env python3
+
+# Core Python
+import sys
+# Third-party Modules
+from colorama import Fore, Back, Style
+# Project Modules
+from scframework.apdu import *
+from scframework.constants import SmartCardConstants
+from scframework.card import Card
+
+# --------------------------------------------------------------------------- #
+
+def coloured(message, colour):
+    return colour + message + Style.RESET_ALL
+
+# --------------------------------------------------------------------------- #
+
+def enumerate_aids(card):
+    found_aids = []
+    for aid, name in SmartCardConstants.APPLICATION_IDS.items():
+        sys.stdout.write(coloured(name, Fore.BLUE) + Style.DIM + " (" + aid + ")" + Style.RESET_ALL + ".. ")
+        select = Select(name=aid)
+        data, sw1, sw2 = card.send_apdu(select.to_str())
+        if sw1 == 0x90 and sw2 == 0x00:
+            sys.stdout.write(coloured("found!\n", Fore.GREEN))
+            found_aids.append(aid)
+        else:
+            sys.stdout.write(coloured("not found!\n", Fore.RED))
+
+    print("")
+    print(coloured("Applications present:", Fore.GREEN))
+    for aid in found_aids:
+        print(coloured(SmartCardConstants.APPLICATION_IDS[aid], Fore.BLUE) + Style.DIM + " (" + aid + ")" + Style.RESET_ALL)
+
+# --------------------------------------------------------------------------- #
+
+def main():
+    card = Card()
+    card.connect()
+    enumerate_aids(card)
+    print("")
+
+# --------------------------------------------------------------------------- #
+
+if __name__ == '__main__':
+    main()

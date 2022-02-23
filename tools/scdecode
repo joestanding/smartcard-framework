@@ -1,0 +1,74 @@
+#!/usr/bin/env python3
+
+import sys
+import argparse
+import textwrap
+from scframework.tlv import Tag
+from scframework.apdu import Request, Response
+from scframework.utilities import StringUtils
+from colorama import Fore, Back, Style
+from tabulate import tabulate
+
+# --------------------------------------------------------------------------- #
+
+def colour(string, colour):
+    return colour + string + Style.RESET_ALL
+
+# --------------------------------------------------------------------------- #
+
+def read_from_file(filename):
+    file_handle = open(filename, 'r')
+    if file_handle:
+        for line in file_handle:
+            line     = line.strip()
+            tokens   = line.split(':')
+            request_str  = tokens[0].strip()
+            response_str = tokens[1].strip()
+
+            from_request_str(request_str)
+            from_response_str(response_str)
+
+# --------------------------------------------------------------------------- #
+
+def from_request_str(request_str):
+    try:
+        request = Request.from_str(request_str)
+    except Exception as err:
+        print("\n" + colour("Failed to parse request string!", Fore.RED))
+        print(colour("Error: ", Style.DIM) + str(err) + "\n")
+        return
+    request.pretty_print()
+    
+# --------------------------------------------------------------------------- #
+
+def from_response_str(response_str):
+    try:
+        response = Response.from_str(response_str)
+    except Exception as err:
+        print("\n" + colour("Failed to parse response string!", Fore.RED))
+        print(colour("Error: ", Style.DIM) + str(err) + "\n")
+        return
+    response.pretty_print()
+
+# --------------------------------------------------------------------------- #
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--file", help="A file containing a smartcard transaction.")
+    parser.add_argument("--request", help="A hex encoded APDU request.")
+    parser.add_argument("--response", help="A hex encoded APDU response.")
+    args = parser.parse_args()
+
+    if args.file:
+        read_from_file(args.file)
+    if args.request:
+        from_request_str(args.request.replace(' ', ''))
+    if args.response:
+        from_response_str(args.response.replace(' ', ''))
+
+# --------------------------------------------------------------------------- #
+
+if __name__ == '__main__':
+    main()
+
+# --------------------------------------------------------------------------- #
